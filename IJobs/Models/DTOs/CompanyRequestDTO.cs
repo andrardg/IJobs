@@ -13,6 +13,7 @@ namespace IJobs.Models.DTOs
         public string Address { get; set; }
         public string Description { get; set; }
         public bool verifiedAccount { get; set; }
+        public Guid Id { get; set; }
         public ICollection<Job> Jobs { get; set; } //one to many between job and company
     }
 }

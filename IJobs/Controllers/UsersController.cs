@@ -7,22 +7,54 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using IJobs.Data;
 using IJobs.Models;
+using IJobs.Services;
+using AutoMapper;
+using IJobs.Models.DTOs;
+using Microsoft.AspNetCore.Authorization;
+using IJobs.Utilities;
+using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Identity;
 
 namespace IJobs.Controllers
 {
+    [Authorize]
     public class UsersController : Controller
     {
-        private readonly projectContext _context;
-
-        public UsersController(projectContext context)
+        private readonly IUserService _service;
+        private readonly IMapper _mapper;
+        private readonly AppSettings _appSettings;
+        public UsersController(IUserService service, IMapper mapper, IOptions<AppSettings> appSettings)
         {
-            _context = context;
+            _service = service;
+            _mapper = mapper;
+            _appSettings = appSettings.Value;
+        }
+        [System.Web.Mvc.AllowAnonymous]
+        public IActionResult Authenticate( UserRequestDTO model)
+        {
+            var response = _service.Authenticate(model);
+            return Ok(response);
+        }
+        [System.Web.Mvc.AllowAnonymous]
+        public IActionResult Register(UserRequestDTO model)
+        {
+            _service.Register(model);
+            return Ok(new { message = "Registration successful" });
         }
 
         // GET: Users
-        public async Task<IActionResult> Index()
+        [System.Web.Mvc.AllowAnonymous]
+        public IActionResult Index()
         {
-            return View(await _context.Users.ToListAsync());
+            var results = _service.GetAllUsers();
+            //var dtos = new List<UserRequestDTO>();
+            //foreach (var result in results)
+            //{
+            //    var userDTO = _mapper.Map<UserRequestDTO>(result);
+            //    dtos.Add(userDTO);
+            //}
+            //return View(dtos);
+            return View(results);
         }
 
         // GET: Users/Details/5
@@ -33,14 +65,13 @@ namespace IJobs.Controllers
                 return NotFound();
             }
 
-            var user = await _context.Users
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var user = _service.GetById(id);
             if (user == null)
             {
                 return NotFound();
             }
-
-            return View(user);
+            var userDTO = _mapper.Map<UserResponseDTO>(user);
+            return View(userDTO);
         }
 
         // GET: Users/Create
@@ -56,14 +87,15 @@ namespace IJobs.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("FirstName,LastName,Email,PasswordHash,Role,Id,DateCreated,DateModified")] User user)
         {
+            var userDTO = _mapper.Map<UserRequestDTO>(user);
             if (ModelState.IsValid)
             {
                 user.Id = Guid.NewGuid();
-                _context.Add(user);
-                await _context.SaveChangesAsync();
+                _service.Create(user);
+                _service.Save();
                 return RedirectToAction(nameof(Index));
             }
-            return View(user);
+            return View(userDTO);
         }
 
         // GET: Users/Edit/5
@@ -74,7 +106,7 @@ namespace IJobs.Controllers
                 return NotFound();
             }
 
-            var user = await _context.Users.FindAsync(id);
+            var user = await _service.FindByIdAsinc(id);
             if (user == null)
             {
                 return NotFound();
@@ -99,12 +131,12 @@ namespace IJobs.Controllers
                 try
                 {
                     user.DateModified = DateTime.UtcNow;
-                    _context.Update(user);
-                    await _context.SaveChangesAsync();
+                    _service.Update(user);
+                    await _service.SaveAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!UserExists(user.Id))
+                    if (_service.FindByIdAsinc(id) == null)
                     {
                         return NotFound();
                     }
@@ -115,7 +147,8 @@ namespace IJobs.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(user);
+            var userDTO = _mapper.Map<UserResponseDTO>(user);
+            return View(userDTO);
         }
 
         // GET: Users/Delete/5
@@ -126,14 +159,15 @@ namespace IJobs.Controllers
                 return NotFound();
             }
 
-            var user = await _context.Users
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var user = await _service.FindByIdAsinc(id);
             if (user == null)
             {
                 return NotFound();
             }
 
-            return View(user);
+            var userDTO = _mapper.Map<UserResponseDTO>(user);
+            return View(userDTO);
+            //(new { message = "User deleted successfully" }
         }
 
         // POST: Users/Delete/5
@@ -141,15 +175,10 @@ namespace IJobs.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
-            var user = await _context.Users.FindAsync(id);
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
+            var user = await _service.FindByIdAsinc(id);
+            _service.Delete(user);
+            await _service.SaveAsync();
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool UserExists(Guid id)
-        {
-            return _context.Users.Any(e => e.Id == id);
         }
     }
 }

@@ -7,22 +7,36 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using IJobs.Data;
 using IJobs.Models;
+using IJobs.Services;
+using IJobs.Repositories.CompanyRepository;
+using AutoMapper;
+using IJobs.Models.DTOs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace IJobs.Controllers
 {
     public class CompaniesController : Controller
     {
-        private readonly projectContext _context;
-
-        public CompaniesController(projectContext context)
+        private readonly ICompanyService _service;
+        private readonly IMapper _mapper;
+        public CompaniesController( ICompanyService service, IMapper mapper)
         {
-            _context = context;
+            _service = service;
+            _mapper = mapper;
         }
 
         // GET: Companies
+        //[System.Web.Mvc.AllowAnonymous]
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Companies.ToListAsync());
+            var results = _service.GetAllCompanies();
+            var dtos = new List<CompanyRequestDTO>();
+            foreach (var result in results)
+            {
+                var companyDTO = _mapper.Map<CompanyRequestDTO>(result);
+                dtos.Add(companyDTO);
+            }
+            return View(dtos);
         }
 
         // GET: Companies/Details/5
@@ -33,14 +47,13 @@ namespace IJobs.Controllers
                 return NotFound();
             }
 
-            var company = await _context.Companies
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var company = _service.FindById(id);
             if (company == null)
             {
                 return NotFound();
             }
-
-            return View(company);
+            var companyDTO = _mapper.Map<CompanyRequestDTO>(company);
+            return View(companyDTO);
         }
 
         // GET: Companies/Create
@@ -56,18 +69,17 @@ namespace IJobs.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Name,Email,PasswordHash,Address,Description")] Company company)
         {
+
+            var companyDTO = _mapper.Map<CompanyRequestDTO>(company);
             if (ModelState.IsValid)
             {
-                company.Id = Guid.NewGuid();
-                company.DateCreated = DateTime.UtcNow;
-                company.DateModified = DateTime.UtcNow;
-                _context.Add(company);
-                await _context.SaveChangesAsync();
+                _service.Create(company);
+                _service.Save();
                 return RedirectToAction(nameof(Index));
             }
-            return View(company);
+            return View(companyDTO);
         }
-
+        
         // GET: Companies/Edit/5
         public async Task<IActionResult> Edit(Guid? id)
         {
@@ -76,12 +88,13 @@ namespace IJobs.Controllers
                 return NotFound();
             }
 
-            var company = await _context.Companies.FindAsync(id);
+            var company = await _service.FindByIdAsinc(id);
             if (company == null)
             {
                 return NotFound();
             }
-            return View(company);
+            var companyDTO = _mapper.Map<CompanyRequestDTO>(company);
+            return View(companyDTO);
         }
 
         // POST: Companies/Edit/5
@@ -101,12 +114,12 @@ namespace IJobs.Controllers
                 try
                 {
                     company.DateModified = DateTime.UtcNow;
-                    _context.Update(company);
-                    await _context.SaveChangesAsync();
+                    _service.Update(company);
+                    await _service.SaveAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!CompanyExists(company.Id))
+                    if (_service.FindByIdAsinc(id) == null)
                     {
                         return NotFound();
                     }
@@ -117,9 +130,10 @@ namespace IJobs.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(company);
+            var companyDTO = _mapper.Map<CompanyRequestDTO>(company);
+            return View(companyDTO);
         }
-
+        
         // GET: Companies/Delete/5
         public async Task<IActionResult> Delete(Guid? id)
         {
@@ -128,14 +142,14 @@ namespace IJobs.Controllers
                 return NotFound();
             }
 
-            var company = await _context.Companies
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var company = await _service.FindByIdAsinc(id);
             if (company == null)
             {
                 return NotFound();
             }
 
-            return View(company);
+            var companyDTO = _mapper.Map<CompanyRequestDTO>(company);
+            return View(companyDTO);
         }
 
         // POST: Companies/Delete/5
@@ -143,15 +157,11 @@ namespace IJobs.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
-            var company = await _context.Companies.FindAsync(id);
-            _context.Companies.Remove(company);
-            await _context.SaveChangesAsync();
+            var company = await _service.FindByIdAsinc(id);
+            _service.Delete(company);
+            await _service.SaveAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool CompanyExists(Guid id)
-        {
-            return _context.Companies.Any(e => e.Id == id);
-        }
     }
 }

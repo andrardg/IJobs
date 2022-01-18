@@ -23,13 +23,17 @@ namespace IJobs.Utilities
             {
                 context.Result = unauthorizedStatusCodeObject;
             }
-                
+            // skip authorization if action is decorated with [AllowAnonymous] attribute
+            var allowAnonymous = context.ActionDescriptor.EndpointMetadata.OfType<AllowAnonymousAttribute>().Any();
+            if (allowAnonymous)
+                return;
+
             var user = (User)context.HttpContext.Items["User"];
             if( user == null || ! _roles.Contains(user.Role))
             {
                 context.Result = unauthorizedStatusCodeObject;
             }
-            throw new NotImplementedException();
+
         }
     }
 }

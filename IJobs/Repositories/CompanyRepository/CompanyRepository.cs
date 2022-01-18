@@ -13,7 +13,6 @@ namespace IJobs.Repositories.CompanyRepository
     {
         public CompanyRepository(projectContext context) : base(context)
         {
-
         }
         public List<Company> GetByTitle(string title)
         {

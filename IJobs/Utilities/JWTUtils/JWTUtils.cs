@@ -1,4 +1,5 @@
 ﻿using IJobs.Models;
+using IJobs.Models.Base;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -11,14 +12,14 @@ using System.Threading.Tasks;
 
 namespace IJobs.Utilities.JWTUtils
 {
-    public class JWTUtils : IJWTUtils
+    public class JWTUtils<TEntity> : IJWTUtils<TEntity> where TEntity : BaseEntity
     {
         private readonly AppSettings _appSettings;
         public JWTUtils(IOptions<AppSettings> appSettings)
         {
             _appSettings = appSettings.Value;
         }
-        public string GenerateJWTToken(User user)
+        public string GenerateJWTToken(TEntity user)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var appPrivateKey = Encoding.ASCII.GetBytes(_appSettings.JwtSecret);

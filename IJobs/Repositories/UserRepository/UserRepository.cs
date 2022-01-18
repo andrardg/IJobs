@@ -24,9 +24,15 @@ namespace IJobs.Repositories.UserRepository
         {
             return _table.Where(x => x.LastName!.ToLower().Contains(LastName.ToLower())).ToList();
         }
+        public List<User> GetByEmail(string Email)
+        {
+            return _table.Where(x => x.Email!.ToLower().Equals(Email.ToLower())).ToList();
+        }
         public List<User> GetAllWithEmploymentInclude()
         {
-            return _table.Include(x => x.Employment).ToList();
+            var result = _table.ToList();
+            //var result = _table.Include(x => x.Employment).ToList();
+            return result;
 
         }
         public List<User> GetAllEmployedLINQ()

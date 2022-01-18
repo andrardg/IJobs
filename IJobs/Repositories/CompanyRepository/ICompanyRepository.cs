@@ -13,6 +13,5 @@ namespace IJobs.Repositories.CompanyRepository
         List<Company> GetByTitleIncludingJobs(string title);
         List<Company> GetAllWithInclude();
         List<Company> GetAllWithJoin();
-
     }
 }
