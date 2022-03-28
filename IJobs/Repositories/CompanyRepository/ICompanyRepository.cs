@@ -12,6 +12,7 @@ namespace IJobs.Repositories.CompanyRepository
         List<Company> GetByTitle(string title);
         List<Company> GetByTitleIncludingJobs(string title);
         List<Company> GetAllWithInclude();
+        List<Company> GetByEmail(string email);
         List<Company> GetAllWithJoin();
     }
 }

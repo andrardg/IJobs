@@ -12,6 +12,8 @@ using IJobs.Repositories.CompanyRepository;
 using AutoMapper;
 using IJobs.Models.DTOs;
 using Microsoft.AspNetCore.Authorization;
+using IJobs.Utilities;
+using Microsoft.Extensions.Options;
 
 namespace IJobs.Controllers
 {
@@ -19,10 +21,24 @@ namespace IJobs.Controllers
     {
         private readonly ICompanyService _service;
         private readonly IMapper _mapper;
-        public CompaniesController( ICompanyService service, IMapper mapper)
+        private readonly AppSettings _appSettings;
+        public CompaniesController( ICompanyService service, IMapper mapper, IOptions<AppSettings> appSettings)
         {
             _service = service;
             _mapper = mapper;
+            _appSettings = appSettings.Value;
+        }
+        [System.Web.Mvc.AllowAnonymous]
+        public IActionResult Authenticate(CompanyRequestDTO model)
+        {
+            var response = _service.Authenticate(model);
+            return Ok(response);
+        }
+        [System.Web.Mvc.AllowAnonymous]
+        public IActionResult Register(CompanyRequestDTO model)
+        {
+            _service.Register(model);
+            return Ok(new { message = "Registration successful" });
         }
 
         // GET: Companies
@@ -47,7 +63,7 @@ namespace IJobs.Controllers
                 return NotFound();
             }
 
-            var company = _service.FindById(id);
+            var company = _service.GetById(id);
             if (company == null)
             {
                 return NotFound();
@@ -88,7 +104,7 @@ namespace IJobs.Controllers
                 return NotFound();
             }
 
-            var company = await _service.FindByIdAsinc(id);
+            var company = await _service.GetByIdAsinc(id);
             if (company == null)
             {
                 return NotFound();
@@ -119,7 +135,7 @@ namespace IJobs.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (_service.FindByIdAsinc(id) == null)
+                    if (_service.GetByIdAsinc(id) == null)
                     {
                         return NotFound();
                     }
@@ -142,7 +158,7 @@ namespace IJobs.Controllers
                 return NotFound();
             }
 
-            var company = await _service.FindByIdAsinc(id);
+            var company = await _service.GetByIdAsinc(id);
             if (company == null)
             {
                 return NotFound();
@@ -157,7 +173,8 @@ namespace IJobs.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
-            var company = await _service.FindByIdAsinc(id);
+            var response = await _service.GetByIdAsinc(id);
+            var company = _mapper.Map<Company>(response);
             _service.Delete(company);
             await _service.SaveAsync();
             return RedirectToAction(nameof(Index));

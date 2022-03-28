@@ -12,17 +12,16 @@ namespace IJobs.Services
         //autentificare
         UserResponseDTO Authenticate(UserRequestDTO model);
         void Register(UserRequestDTO model);
-        void Update(Guid id, UserRequestDTO model);
+        void Create(User user);
+        void Update(Guid? id, UserRequestDTO model);
+        void Update(User entity);
         //get all
         IEnumerable<UserResponseDTO> GetAllUsers();
         //get by id
-        User GetById(Guid? id);
-
-        void Create(User user);
-        Task<User> FindByIdAsinc(Guid? id);
-        void Update(User entity);
-        Task<bool> SaveAsync();
+        UserResponseDTO GetById(Guid? id);
+        Task<UserResponseDTO> GetByIdAsinc(Guid? id);
         bool Save();
+        Task<bool> SaveAsync();
         void Delete(User entity);
     }
 }

@@ -30,8 +30,8 @@ namespace IJobs.Repositories.GenericRepository
 
 
         // Find
-        TEntity FindById(object id);
-        Task<TEntity> FindByIdAsinc(object id);
+        TEntity GetById(object id);
+        Task<TEntity> GetByIdAsinc(object id);
 
 
         // Save

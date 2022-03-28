@@ -31,7 +31,7 @@ namespace IJobs.Services
             //validate
             if (user == null || !BCrypt.Net.BCrypt.Verify(model.Password, user.PasswordHash))
             {
-                throw new Exception("Username or password is incorrect");
+                throw new Exception("Email or password is incorrect");
                 //return null;
             }
             //auth successful
@@ -56,10 +56,19 @@ namespace IJobs.Services
             Create(user);
             Save();
         }
-
-        public void Update(Guid id, UserRequestDTO model)
+        public void Create(User user)
         {
-            var user = _userRepository.FindById(id);
+            user.Id = Guid.NewGuid();
+            user.DateCreated = DateTime.UtcNow;
+            user.DateModified = DateTime.UtcNow;
+            _userRepository.Create(user);
+            _userRepository.Save();
+
+        }
+
+        public void Update(Guid? id, UserRequestDTO model)
+        {
+            var user = _userRepository.GetById(id);
 
             // validate
             if (model.Email != user.Email && _userRepository.GetByEmail(model.Email) == null)
@@ -74,6 +83,10 @@ namespace IJobs.Services
             Update(user);
             Save();
         }
+        public void Update(User entity)
+        {
+            _userRepository.Update(entity);
+        }
         public IEnumerable<UserResponseDTO> GetAllUsers()
         {
             var results = _userRepository.GetAllWithEmploymentInclude();
@@ -87,36 +100,22 @@ namespace IJobs.Services
             }
             return dtos;
         }
-
-        public void Create(User user)
+        public UserResponseDTO GetById(Guid? id)
         {
-            user.Id = Guid.NewGuid();
-            user.DateCreated = DateTime.UtcNow;
-            user.DateModified = DateTime.UtcNow;
-            _userRepository.Create(user);
-            _userRepository.Save();
-
-        }
-
-        public User GetById(Guid? id)
-        {
-            var user = _userRepository.FindById(id);
+            var user = _userRepository.GetById(id);
             if (user == null) 
                 throw new KeyNotFoundException("User not found");
-            return user;
+            var response = _mapper.Map<UserResponseDTO>(user);
+            return response;
         }
-
-        public async Task<User> FindByIdAsinc(Guid? id)
+        public async Task<UserResponseDTO> GetByIdAsinc(Guid? id)
         {
-            var user = await _userRepository.FindByIdAsinc(id);
+            var user = await _userRepository.GetByIdAsinc(id);
             if (user == null)
                 throw new KeyNotFoundException("User not found");
-            return user;
+            var response = _mapper.Map<UserResponseDTO>(user);
+            return response;
             //return await _table.FirstOrDefaultAsync(x => x.Id.Equals(id));
-        }
-        public void Update(User entity)
-        {
-            _userRepository.Update(entity);
         }
         public bool Save()
         {

@@ -33,5 +33,10 @@ namespace IJobs.Repositories.CompanyRepository
                 (c, j) => new { c, j }).Select(obj => obj.c);
             return result.ToList();
         }
+
+        public List<Company> GetByEmail(string email)
+        {
+            return _table.Where(x => x.Email!.ToLower().Equals(email.ToLower())).ToList();
+        }
     }
 }

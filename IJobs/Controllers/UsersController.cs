@@ -17,7 +17,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace IJobs.Controllers
 {
-    [Authorize]
+    //[Authorize]
     public class UsersController : Controller
     {
         private readonly IUserService _service;
@@ -106,7 +106,7 @@ namespace IJobs.Controllers
                 return NotFound();
             }
 
-            var user = await _service.FindByIdAsinc(id);
+            var user = await _service.GetByIdAsinc(id);
             if (user == null)
             {
                 return NotFound();
@@ -136,7 +136,7 @@ namespace IJobs.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (_service.FindByIdAsinc(id) == null)
+                    if (_service.GetByIdAsinc(id) == null)
                     {
                         return NotFound();
                     }
@@ -159,7 +159,7 @@ namespace IJobs.Controllers
                 return NotFound();
             }
 
-            var user = await _service.FindByIdAsinc(id);
+            var user = await _service.GetByIdAsinc(id);
             if (user == null)
             {
                 return NotFound();
@@ -175,7 +175,8 @@ namespace IJobs.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
-            var user = await _service.FindByIdAsinc(id);
+            var response = await _service.GetByIdAsinc(id);
+            var user = _mapper.Map<User>(response);
             _service.Delete(user);
             await _service.SaveAsync();
             return RedirectToAction(nameof(Index));

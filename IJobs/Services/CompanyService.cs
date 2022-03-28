@@ -17,40 +17,51 @@ namespace IJobs.Services
     public class CompanyService : ICompanyService
     {
         public ICompanyRepository _companyRepository;
-        private IJWTUtils<Company> ijwtUtils; 
-        public projectContext context;
-        public CompanyService(ICompanyRepository companyRepository)
+        private IJWTUtils<Company> _ijwtUtils; 
+        public projectContext _context;
+        private readonly IMapper _mapper;
+        public CompanyService(projectContext context, IMapper mapper, IJWTUtils<Company> ijwtUtils, ICompanyRepository companyRepository)
         {
             _companyRepository = companyRepository;
+            _context = context;
+            _ijwtUtils = ijwtUtils;
+            _mapper = mapper;
         }
 
         public CompanyResponseDTO Authenticate(CompanyRequestDTO model)
         {
-            var company = context.Companies.FirstOrDefault(x => x.Email == model.Email);
-            if (company == null || BCrypt.Net.BCrypt.Verify(model.PasswordHash, company.PasswordHash))
+            var company = _context.Companies.FirstOrDefault(x => x.Email == model.Email);
+            if (company == null || BCrypt.Net.BCrypt.Verify(model.Password, company.PasswordHash))
             {
-                return null;
+                throw new Exception("Email or password is incorrect");
+                //return null;
             }
+            //auth successful
+            var response = _mapper.Map<CompanyResponseDTO>(company);
             //JWT generation (JSON WEB TOKEN)
-            var jwtToken = ijwtUtils.GenerateJWTToken(company);
-            return new CompanyResponseDTO(company, jwtToken);
+            response.Token = _ijwtUtils.GenerateJWTToken(company);
+            return response;
+
+            //JWT generation (JSON WEB TOKEN)
+            //var jwtToken = _ijwtUtils.GenerateJWTToken(company);
+            //return new CompanyResponseDTO(company, jwtToken);
         }
 
-        public IEnumerable<Company> GetAllCompanies()
+        public void Register(CompanyRequestDTO model)
         {
-            var results = _companyRepository.GetAllWithInclude();
-            return (IEnumerable<Company>)results;
-        }
+            // validate
+            if (_context.Companies.Any(x => x.Email == model.Email))
+                throw new Exception("Email '" + model.Email + "' is already taken");
 
-        public IEnumerable<Company> GetByTitle(string title)
-        {
-            var result = _companyRepository.GetByTitle(title);
-            return result;
-        }
-        public IEnumerable<Company> GetByTitleIncludingJobs(string title)
-        {
-            var result = _companyRepository.GetByTitleIncludingJobs(title);
-            return result;
+            // map model to new user object
+            var company = _mapper.Map<Company>(model);
+
+            // hash password
+            company.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password);
+
+            // save user
+            Create(company);
+            Save();
         }
         public void Create(Company company)
         {
@@ -59,21 +70,77 @@ namespace IJobs.Services
             company.DateModified = DateTime.UtcNow;
             _companyRepository.Create(company);
             _companyRepository.Save();
-                
-        }
 
-        public Company FindById(Guid? id)
-        {
-            return _companyRepository.FindById(id);
         }
-
-        public async Task<Company> FindByIdAsinc(Guid? id)
+        public void Update(Guid? id, CompanyRequestDTO model)
         {
-            return await _companyRepository.FindByIdAsinc(id);
+            var company = _companyRepository.GetById(id);
+
+            // validate
+            if (model.Email != company.Email && _companyRepository.GetByEmail(model.Email) == null)
+                throw new Exception("Email '" + model.Email + "' is already taken");
+
+            // hash password if it was entered
+            if (!string.IsNullOrEmpty(model.Password))
+                company.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password);
+
+            // copy model to user and save
+            _mapper.Map(model, company);
+            Update(company);
+            Save();
         }
         public void Update(Company entity)
         {
             _companyRepository.Update(entity);
+        }
+        public IEnumerable<CompanyResponseDTO> GetAllCompanies()
+        {
+            var results = _companyRepository.GetAllWithInclude();
+            var dtos = new List<CompanyResponseDTO>();
+            foreach (var result in results)
+            {
+                var response = _mapper.Map<CompanyResponseDTO>(result);
+                dtos.Add(response);
+            }
+            return dtos;
+        }
+        public CompanyResponseDTO GetById(Guid? id)
+        {
+            var company = _companyRepository.GetById(id);
+            if (company == null)
+                throw new KeyNotFoundException("Company not found");
+            var response = _mapper.Map<CompanyResponseDTO>(company);
+            return response;
+        }
+        public async Task<CompanyResponseDTO> GetByIdAsinc(Guid? id)
+        {
+            var company = await _companyRepository.GetByIdAsinc(id);
+            if (company == null)
+                throw new KeyNotFoundException("Company not found");
+            var response = _mapper.Map<CompanyResponseDTO>(company);
+            return response;
+        }
+        public IEnumerable<CompanyResponseDTO> GetByTitle(string title)
+        {
+            var results = _companyRepository.GetByTitle(title);
+            var dtos = new List<CompanyResponseDTO>();
+            foreach (var result in results)
+            {
+                var response = _mapper.Map<CompanyResponseDTO>(result);
+                dtos.Add(response);
+            }
+            return dtos;
+        }        
+        public IEnumerable<CompanyResponseDTO> GetByTitleIncludingJobs(string title)
+        {
+            var results = _companyRepository.GetByTitleIncludingJobs(title);
+            var dtos = new List<CompanyResponseDTO>();
+            foreach (var result in results)
+            {
+                var response = _mapper.Map<CompanyResponseDTO>(result);
+                dtos.Add(response);
+            }
+            return dtos;
         }
         public bool Save()
         {

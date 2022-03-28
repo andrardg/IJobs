@@ -9,9 +9,9 @@ namespace IJobs.Repositories.UserRepository
 {
     public interface IUserRepository : IGenericRepository<User>
     {
-        List<User> GetByFirstName(string FirstName);
-        List<User> GetByLastName(string LastName);
-        List<User> GetByEmail(string Email);
+        List<User> GetByFirstName(string firstName);
+        List<User> GetByLastName(string lastName);
+        List<User> GetByEmail(string email);
         List<User> GetAllWithEmploymentInclude();
         List<User> GetAllEmployedLINQ();
     }

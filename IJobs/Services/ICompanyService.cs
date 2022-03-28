@@ -11,18 +11,20 @@ namespace IJobs.Services
     {
         //ModelResultDTO GetDataMappedByTitle(string title);
         CompanyResponseDTO Authenticate(CompanyRequestDTO model);
-        //get all
-        IEnumerable<Company> GetAllCompanies();
-        //get by name
-        IEnumerable<Company> GetByTitle(string title);
-        //get by name including jobs
-        IEnumerable<Company> GetByTitleIncludingJobs(string title);
+        void Register(CompanyRequestDTO model);
         void Create(Company company);
-        Company FindById(Guid? id);
-        Task<Company> FindByIdAsinc(Guid? id);
+        void Update(Guid? id, CompanyRequestDTO model);
         void Update(Company entity);
-        Task<bool> SaveAsync();
+        //get all
+        IEnumerable<CompanyResponseDTO> GetAllCompanies();
+        CompanyResponseDTO GetById(Guid? id);
+        Task<CompanyResponseDTO> GetByIdAsinc(Guid? id);
+        //get by name
+        IEnumerable<CompanyResponseDTO> GetByTitle(string title);
+        //get by name including jobs
+        IEnumerable<CompanyResponseDTO> GetByTitleIncludingJobs(string title);
         bool Save();
+        Task<bool> SaveAsync();
         void Delete(Company entity);
     }
 }

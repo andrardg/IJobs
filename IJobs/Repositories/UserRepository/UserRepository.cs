@@ -16,17 +16,17 @@ namespace IJobs.Repositories.UserRepository
         {
 
         }
-        public List<User> GetByFirstName(string FirstName)
+        public List<User> GetByFirstName(string firstName)
         {
-            return _table.Where(s => s.FirstName!.ToLower().Contains(FirstName.ToLower())).ToList();
+            return _table.Where(s => s.FirstName!.ToLower().Contains(firstName.ToLower())).ToList();
         }
-        public List<User> GetByLastName(string LastName)
+        public List<User> GetByLastName(string lastName)
         {
-            return _table.Where(x => x.LastName!.ToLower().Contains(LastName.ToLower())).ToList();
+            return _table.Where(x => x.LastName!.ToLower().Contains(lastName.ToLower())).ToList();
         }
-        public List<User> GetByEmail(string Email)
+        public List<User> GetByEmail(string email)
         {
-            return _table.Where(x => x.Email!.ToLower().Equals(Email.ToLower())).ToList();
+            return _table.Where(x => x.Email!.ToLower().Equals(email.ToLower())).ToList();
         }
         public List<User> GetAllWithEmploymentInclude()
         {
